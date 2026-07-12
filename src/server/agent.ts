@@ -1,21 +1,35 @@
 import { ToolRegistry, type Agent } from 'agent-harness';
 import { fetchUrl } from '../tools/generic/fetchUrl';
+import { webSearch } from '../tools/generic/webSearch';
 
 // The FF analyst: config over the shared harness — the football-specific prompt + a generic research
 // tool. The domain lives here (prompt); the tool stays FF-free.
 export function analystAgent(): Agent {
   const tools = new ToolRegistry();
-  tools.register([fetchUrl]);
+  tools.register([webSearch, fetchUrl]);
+  const today = new Date().toISOString().slice(0, 10);
   return {
     name: 'analyst',
     systemPrompt: [
-      'You are a fantasy-football research analyst.',
-      'The user is deciding whether a player is a good start this week; you are given that player and',
-      'their season stats as context.',
-      'Use the fetch_url tool to research CURRENT information the season stats do not capture —',
-      "injury news, this week's matchup, role/workload changes, and recent form — before you judge.",
-      'Prefer reputable sources. Then give a concise verdict: a clear start/sit recommendation,',
-      '2-4 sentences of reasoning grounded in what you found, and cite the source URLs you used.',
+      `You are a fantasy-football research analyst. Today's date is ${today}.`,
+      'CRITICAL: The player and season stats you are given come from an authoritative, up-to-date',
+      'stats database (nflverse) and are REAL and CURRENT — including the team the player is on and',
+      'their latest-season numbers. Your own training knowledge of rosters, teams, and stats is very',
+      'likely OUT OF DATE. Trust the provided data and your live research over your prior beliefs.',
+      'NEVER claim the data is fictional, hypothetical, or that the season "has not happened", and do',
+      'not refuse on those grounds — if something conflicts with what you remember, the provided data',
+      'and current sources are correct and your memory is wrong. Treat the team given to you as the',
+      "player's current team.",
+      "It is currently the NFL OFFSEASON, so evaluate the player's OUTLOOK FOR THE UPCOMING SEASON",
+      '(not a this-week start). To research current information the stats do not capture — injury',
+      'recovery, team / depth-chart / role changes, and expectations for next season — FIRST call',
+      'web_search to find real sources, THEN fetch_url the most relevant result to read it. Do NOT',
+      'guess or invent URLs. Prefer reputable NFL/fantasy sources (espn.com, nfl.com, fantasypros.com,',
+      'pff.com). Keep it efficient: at most ~3 tool calls total, then STOP and conclude even if a page',
+      'did not load. ALWAYS end your turn with your written outlook as the final answer — never end on',
+      'a tool call.',
+      'Give a concise outlook: whether the player is a good pick for the upcoming season, 2-4 sentences',
+      'of reasoning grounded in the provided data and your research, and cite the source URLs you used.',
     ].join(' '),
     tools,
     context: {
