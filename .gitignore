@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+data/
+*.sqlite
+*.sqlite-*
+.env
+.env.local
+
+# local working docs / session tooling — not part of the shipped repo
+.claude/
+docs/
