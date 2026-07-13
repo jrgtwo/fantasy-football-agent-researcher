@@ -1,14 +1,32 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { Player, PlayerStats } from '../data/types';
 import { getPlayerStats, searchPlayers } from './api';
-import { useHarness } from './useHarness';
+import { SELECT_PLAYER_TOOL, resolveSelectPlayer } from './clientTools';
+import { useHarness, type ToolInvokeHandler } from './useHarness';
 
 export function App() {
-  const { run, connected, evaluate, decideConsent } = useHarness();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Player[]>([]);
   const [selected, setSelected] = useState<Player | null>(null);
   const [stats, setStats] = useState<PlayerStats | null>(null);
+
+  // App-connector tool: the agent calls select_player → we run the same search + card the user does,
+  // update the UI, and hand the resolved stat line back to the model.
+  const onToolInvoke = useCallback<ToolInvokeHandler>(async (req) => {
+    if (req.name !== SELECT_PLAYER_TOOL.name) return { error: `unknown client tool "${req.name}"` };
+    const outcome = await resolveSelectPlayer(req.args, { searchPlayers, getPlayerStats });
+    if (!outcome.ok) return { error: outcome.error };
+    setSelected(outcome.player);
+    setResults([]);
+    setQuery(outcome.player.name);
+    setStats(outcome.stats);
+    return { result: outcome.payload };
+  }, []);
+
+  const { run, connected, evaluate, decideConsent } = useHarness({
+    clientTools: [SELECT_PLAYER_TOOL],
+    onToolInvoke,
+  });
 
   async function onSearch(q: string) {
     setQuery(q);
