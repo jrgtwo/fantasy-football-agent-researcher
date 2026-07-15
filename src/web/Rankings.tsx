@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { PlayerCard } from './PlayerCard';
+import { resolveRankedPlayers } from './rankingBoard';
 import { useRanking } from './useRanking';
 
 const POSITIONS = ['QB', 'RB', 'WR', 'TE'];
@@ -84,12 +86,31 @@ export function Rankings() {
         </>
       )}
 
-      {state.synthesis.answer && (
-        <div className="verdict board">
-          <h3>Ranked top 5 — {state.position}</h3>
-          <pre className="board-md">{state.synthesis.answer}</pre>
-        </div>
-      )}
+      {state.synthesis.answer &&
+        (() => {
+          // Hydrate the ranker's [[Pn]] handles into real cards; fall back to prose-only if none parse.
+          const picks = resolveRankedPlayers(state.synthesis.answer, state.players);
+          return (
+            <div className="verdict board">
+              <h3>Ranked top 5 — {state.position}</h3>
+              {picks.length > 0 && (
+                <ol className="ranked-cards">
+                  {picks.map((pick) => (
+                    <li key={pick.run.player.id} className="ranked-card">
+                      <span className="rank-num">{pick.rank}</span>
+                      <PlayerCard className="compact" player={pick.run.player} stats={pick.run.stats} />
+                      {pick.note && <p className="rank-note">{pick.note}</p>}
+                    </li>
+                  ))}
+                </ol>
+              )}
+              <details className="board-prose" open={picks.length === 0}>
+                <summary>Full analysis</summary>
+                <pre className="board-md">{state.synthesis.answer}</pre>
+              </details>
+            </div>
+          );
+        })()}
       {state.error && <p className="error">error: {state.error}</p>}
     </section>
   );

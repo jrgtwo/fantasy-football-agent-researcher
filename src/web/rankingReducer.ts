@@ -28,13 +28,19 @@ export function scoutInput(player: Player, stats: PlayerStats): string {
 }
 
 export function composeRankerInput(position: string, players: PlayerRun[]): string {
+  // Tag each candidate with a handle ([[Pn]] = the nth player). The ranker echoes the handle back at
+  // the head of each ranked line so the app can hydrate the pick into a real card (rankingBoard).
   const blocks = players
-    .map((pr) => {
+    .map((pr, i) => {
       const writeup = pr.run.answer.trim() || '(no writeup produced)';
-      return `## ${pr.player.name} (${pr.player.team}) — season ${pr.stats.season} PPR ${pr.stats.fantasyPointsPpr.toFixed(1)}\n${writeup}`;
+      return `## [[P${i + 1}]] ${pr.player.name} (${pr.player.team}) — season ${pr.stats.season} PPR ${pr.stats.fantasyPointsPpr.toFixed(1)}\n${writeup}`;
     })
     .join('\n\n');
-  return `Rank the top 5 ${position} for the upcoming season based on these scouting writeups.\n\n${blocks}`;
+  return (
+    `Rank the top 5 ${position} for the upcoming season based on these scouting notes. Each player is ` +
+    `tagged with a handle like [[P1]]; BEGIN each of your numbered top-5 entries with that player's ` +
+    `exact handle, e.g. "1. [[P3]] **Name** (Tier 1) — ...".\n\n${blocks}`
+  );
 }
 
 export function allScoutsSettled(state: RankingState): boolean {

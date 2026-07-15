@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import type { Player, PlayerStats } from '../data/types';
 import { getPlayerStats, searchPlayers } from './api';
 import { SELECT_PLAYER_TOOL, resolveSelectPlayer } from './clientTools';
+import { PlayerCard } from './PlayerCard';
 import { useHarness, type ToolInvokeHandler } from './useHarness';
 
 export function Evaluate() {
@@ -87,38 +88,11 @@ export function Evaluate() {
       </div>
 
       {selected && stats && (
-        <section className="card">
-          {selected.headshot && <img src={selected.headshot} alt="" width={72} height={72} />}
-          <div className="card-body">
-            <h2>{selected.name}</h2>
-            <p className="muted">
-              {selected.position} · {selected.team} · {stats.games} G
-            </p>
-            <ul className="statline">
-              <li>
-                <b>{stats.fantasyPointsPpr.toFixed(1)}</b> PPR
-              </li>
-              {stats.passingYards > 0 && (
-                <li>
-                  {stats.passingYards} pass yds · {stats.passingTds} TD
-                </li>
-              )}
-              {stats.rushingYards > 0 && (
-                <li>
-                  {stats.rushingYards} rush yds · {stats.rushingTds} TD
-                </li>
-              )}
-              {stats.receivingYards > 0 && (
-                <li>
-                  {stats.receptions} rec · {stats.receivingYards} yds · {stats.receivingTds} TD
-                </li>
-              )}
-            </ul>
-          </div>
+        <PlayerCard player={selected} stats={stats}>
           <button className="evaluate" disabled={running || !connected} onClick={onEvaluate}>
             {running ? 'Evaluating…' : 'Evaluate'}
           </button>
-        </section>
+        </PlayerCard>
       )}
 
       {run.consent && (
