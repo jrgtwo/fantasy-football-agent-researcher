@@ -1,4 +1,5 @@
 import { createServer, type Server } from 'node:http';
+import { topByPosition } from '../data/query';
 import type { StatsStore } from '../data/store';
 
 export interface ApiResponse {
@@ -26,6 +27,14 @@ export function handleApiRequest(method: string, url: string, store: StatsStore)
     const stats = store.stats(id);
     if (!stats) return { status: 404, body: { error: 'no stats for player' } };
     return { status: 200, body: stats };
+  }
+
+  if (path === '/rankings/candidates') {
+    const position = parsed.searchParams.get('position');
+    if (!position) return { status: 400, body: { error: 'position required' } };
+    const nRaw = Number(parsed.searchParams.get('n') || '8');
+    const n = Math.min(12, Math.max(1, Number.isFinite(nRaw) ? nRaw : 8));
+    return { status: 200, body: topByPosition(store.allPlayers(), store.allStats(), position, n) };
   }
 
   return { status: 404, body: { error: 'not found' } };

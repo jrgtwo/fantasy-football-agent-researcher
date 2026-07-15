@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { createHarnessServer, OpenAICompatibleClient, Store } from 'agent-harness';
 import { createStatsStore } from '../data/store';
-import { analystAgent } from './agent';
+import { analystAgent, rankerAgent, scoutAgent } from './agent';
 import { startAppApi } from './appApi';
 import { resolveModelUrl } from './resolveModelUrl';
 
@@ -30,7 +30,13 @@ const model = new OpenAICompatibleClient({
 });
 mkdirSync(dirname(dbPath), { recursive: true });
 const store = new Store(dbPath);
-const handle = await createHarnessServer({ model, agents: [analystAgent()], token, port: wsPort, store });
+const handle = await createHarnessServer({
+  model,
+  agents: [analystAgent(), scoutAgent(), rankerAgent()],
+  token,
+  port: wsPort,
+  store,
+});
 
 console.log(`harness sidecar: ws://127.0.0.1:${handle.port}`);
 console.log(`model:  ${process.env.MODEL_NAME ?? 'local'} @ ${baseUrl}  [${how}]`);

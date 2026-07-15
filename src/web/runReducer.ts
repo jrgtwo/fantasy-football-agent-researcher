@@ -39,11 +39,9 @@ const short = (v: unknown): string => {
   return s.length > 80 ? s.slice(0, 80) + '…' : s;
 };
 
-// Folds the flat AgentEvent stream into render state (answer + activity trace + a pending consent
-// prompt). This folding is probe #1 — watch whether it wants to become a generic harness capability.
-export function runReducer(state: RunState, action: RunAction): RunState {
-  if (action.type === 'reset') return initialRunState;
-  const e = action.event;
+// Folds one run's event stream into render state. Shared by the single-run reducer and each
+// per-player run in the rankings fan-out.
+export function foldRunEvent(state: RunState, runId: string, e: AgentEvent): RunState {
   const push = (kind: string, text: string): RunState => ({ ...state, trace: [...state.trace, { kind, text }] });
   switch (e.type) {
     case 'run.started':
@@ -55,7 +53,7 @@ export function runReducer(state: RunState, action: RunAction): RunState {
     case 'tool.requested':
       return push('tool', `▸ ${e.name}(${short(e.args)})`);
     case 'consent.requested':
-      return { ...state, consent: { runId: action.runId, callId: e.callId, name: e.name, args: e.args } };
+      return { ...state, consent: { runId, callId: e.callId, name: e.name, args: e.args } };
     case 'consent.decided':
       return { ...state, consent: null, trace: [...state.trace, { kind: 'consent', text: `consent ${e.allow ? 'approved' : 'denied'}` }] };
     case 'tool.started':
@@ -72,4 +70,9 @@ export function runReducer(state: RunState, action: RunAction): RunState {
       // model.call.started/finished are not shown in v1's bare-bones trace.
       return state;
   }
+}
+
+export function runReducer(state: RunState, action: RunAction): RunState {
+  if (action.type === 'reset') return initialRunState;
+  return foldRunEvent(state, action.runId, action.event);
 }

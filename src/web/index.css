@@ -43,6 +43,26 @@ h1 {
   font-size: 1.4rem;
   margin: 0;
 }
+
+.tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+.tabs button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.tabs button.on {
+  background: var(--panel);
+  color: var(--fg);
+  border-color: var(--accent);
+}
 .muted {
   color: var(--muted);
   font-weight: 400;
@@ -227,4 +247,79 @@ h1 {
 }
 .error {
   color: var(--danger);
+}
+
+.rank-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.pos {
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.pos.on {
+  background: var(--panel);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.pos:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.chip {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--muted);
+}
+.chip.queued {
+  background: var(--muted);
+}
+.chip.running {
+  background: var(--accent);
+}
+.chip.done {
+  background: #16a34a;
+}
+.chip.error {
+  background: var(--danger);
+}
+
+.scout-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+.scout-list li {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-bottom: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--panel);
+}
+.scout-list summary {
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+.scout-list .writeup {
+  white-space: pre-wrap;
+  line-height: 1.5;
+  font-size: 0.9rem;
+  margin: 0.6rem 0 0;
+}
+
+.board-md {
+  white-space: pre-wrap;
+  font-family: inherit;
+  line-height: 1.55;
+  margin: 0;
 }

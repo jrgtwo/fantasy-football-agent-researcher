@@ -14,3 +14,12 @@ export async function getPlayerStats(id: string): Promise<PlayerStats | null> {
   if (!res.ok) return null;
   return (await res.json()) as PlayerStats;
 }
+
+export async function getRankingCandidates(
+  position: string,
+  n = 8,
+): Promise<{ player: Player; stats: PlayerStats }[]> {
+  const res = await fetch(`/api/rankings/candidates?position=${encodeURIComponent(position)}&n=${n}`);
+  if (!res.ok) return [];
+  return (await res.json()) as { player: Player; stats: PlayerStats }[];
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getPlayerStatsById, searchPlayers } from './query';
+import { getPlayerStatsById, searchPlayers, topByPosition } from './query';
 import type { Player, PlayerStats } from './types';
 
 const PLAYERS: Player[] = [
@@ -57,5 +57,34 @@ describe('getPlayerStatsById', () => {
 
   it('returns undefined for an unknown id', () => {
     expect(getPlayerStatsById(STATS, '999')).toBeUndefined();
+  });
+});
+
+describe('topByPosition', () => {
+  const players: Player[] = [
+    { id: 'a', name: 'QB A', position: 'QB', team: 'KC', headshot: '', status: '' },
+    { id: 'b', name: 'QB B', position: 'QB', team: 'BUF', headshot: '', status: '' },
+    { id: 'c', name: 'RB C', position: 'RB', team: 'SF', headshot: '', status: '' },
+    { id: 'd', name: 'QB D no stats', position: 'QB', team: 'NYJ', headshot: '', status: '' },
+  ];
+  const s = (playerId: string, ppr: number): PlayerStats =>
+    ({ playerId, season: 2024, seasonType: 'REG', team: '', games: 1, passingYards: 0, passingTds: 0,
+       interceptions: 0, carries: 0, rushingYards: 0, rushingTds: 0, receptions: 0, targets: 0,
+       receivingYards: 0, receivingTds: 0, fantasyPoints: 0, fantasyPointsPpr: ppr }) as PlayerStats;
+  const stats = [s('a', 100), s('b', 250), s('c', 300)];
+
+  it('returns players at the position sorted by PPR desc', () => {
+    const top = topByPosition(players, stats, 'QB', 5);
+    expect(top.map((t) => t.player.id)).toEqual(['b', 'a']);
+    expect(top[0]!.stats.fantasyPointsPpr).toBe(250);
+  });
+
+  it('respects the limit n', () => {
+    expect(topByPosition(players, stats, 'QB', 1).map((t) => t.player.id)).toEqual(['b']);
+  });
+
+  it('is case-insensitive on position and excludes players with no stat line', () => {
+    const top = topByPosition(players, stats, 'qb', 5);
+    expect(top.map((t) => t.player.id)).toEqual(['b', 'a']); // 'd' has no stats → excluded
   });
 });

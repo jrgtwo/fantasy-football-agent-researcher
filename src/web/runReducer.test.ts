@@ -1,6 +1,6 @@
 import type { AgentEvent } from 'agent-harness/client';
 import { describe, expect, it } from 'vitest';
-import { initialRunState, runReducer } from './runReducer';
+import { foldRunEvent, initialRunState, runReducer } from './runReducer';
 
 const ev = (event: AgentEvent) => ({ type: 'event' as const, runId: 'r1', event });
 
@@ -51,5 +51,19 @@ describe('runReducer', () => {
   it('reset returns to the initial state', () => {
     const dirty = runReducer(initialRunState, ev({ type: 'token', runId: 'r1', text: 'x' }));
     expect(runReducer(dirty, { type: 'reset' })).toEqual(initialRunState);
+  });
+});
+
+describe('foldRunEvent', () => {
+  it('folds a token event directly (no action wrapper)', () => {
+    const s = foldRunEvent(initialRunState, 'rX', { type: 'token', runId: 'rX', text: 'hi' });
+    expect(s.answer).toBe('hi');
+  });
+
+  it('records the runId on a consent prompt', () => {
+    const s = foldRunEvent(initialRunState, 'rX', {
+      type: 'consent.requested', runId: 'rX', callId: 'c9', name: 'web_search', args: {},
+    });
+    expect(s.consent).toEqual({ runId: 'rX', callId: 'c9', name: 'web_search', args: {} });
   });
 });

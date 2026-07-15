@@ -9,6 +9,8 @@ export interface StatsStore {
   season: number;
   search(query: string, limit?: number): Player[];
   stats(playerId: string): PlayerStats | undefined;
+  allPlayers(): Player[];
+  allStats(): PlayerStats[];
 }
 
 export function createStatsStore(path?: string): StatsStore {
@@ -17,5 +19,7 @@ export function createStatsStore(path?: string): StatsStore {
     season: snap.season,
     search: (query, limit) => searchPlayers(snap.players, query, limit),
     stats: (playerId) => getPlayerStatsById(snap.stats, playerId),
+    allPlayers: () => snap.players,
+    allStats: () => snap.stats,
   };
 }
