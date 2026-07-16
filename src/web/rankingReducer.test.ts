@@ -103,8 +103,8 @@ describe('ranking helpers', () => {
     const input = composeRankerInput('QB', s.players);
     expect(input).toContain('QB');
     expect(input).toContain('A is great');
-    expect(input).toContain('[[P1]]'); // handles injected for the card-hydration round-trip
-    expect(input).toContain('[[P2]]');
+    expect(input).toContain('id=P1'); // ids injected for the Markdoc tag round-trip
+    expect(input).toContain('id=P2');
   });
 
   it('allPendingConsents returns EVERY concurrently-pending consent (not just the representative)', () => {

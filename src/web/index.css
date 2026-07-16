@@ -324,26 +324,66 @@ h1 {
   margin: 0;
 }
 
-/* Ranked cards hydrated from the ranker's [[Pn]] handles */
+/* Enriched cards hydrated from the ranker's {% player %} Markdoc tags */
 .ranked-cards {
   list-style: none;
   margin: 0 0 1rem;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 .ranked-card {
   display: grid;
   grid-template-columns: 1.75rem 1fr;
-  gap: 0.5rem 0.75rem;
-  align-items: center;
+  gap: 0.75rem;
+  align-items: start;
 }
 .ranked-card .rank-num {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--muted);
   text-align: center;
+  padding-top: 0.35rem;
+}
+.ranked-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.ranked-badges {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.tier-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.pick-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  color: #fff;
+}
+.pick-badge.good {
+  background: #16a34a;
+}
+.pick-badge.fade {
+  background: #b91c1c;
+}
+.pick-badge.neutral {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
 }
 .ranked-card .card {
   margin-top: 0;
@@ -359,18 +399,16 @@ h1 {
 .card.compact .card-body h2 {
   font-size: 1rem;
 }
-.ranked-card .rank-note {
-  grid-column: 2;
+.rank-note {
   margin: 0;
   font-size: 0.88rem;
   line-height: 1.45;
-  color: var(--muted);
 }
-.board-prose {
-  margin-top: 0.5rem;
+.rank-note a,
+.board-bottomline a {
+  color: var(--accent);
 }
-.board-prose summary {
-  cursor: pointer;
-  color: var(--muted);
-  font-size: 0.9rem;
+.board-bottomline {
+  margin: 0.75rem 0 0;
+  line-height: 1.55;
 }

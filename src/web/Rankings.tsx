@@ -1,9 +1,18 @@
 import { useState } from 'react';
+import { MarkdownInline } from './markdownInline';
 import { PlayerCard } from './PlayerCard';
-import { resolveRankedPlayers } from './rankingBoard';
+import { boardProse, resolveRankedPlayers } from './rankingBoard';
 import { useRanking } from './useRanking';
 
 const POSITIONS = ['QB', 'RB', 'WR', 'TE'];
+
+// The ranker coins its own short badge words (VALUE, STEAL, FADE, ANCHOR…). Map any of them to a
+// color-accent class by meaning so every badge renders as a proper pill.
+function badgeKind(badge: string): string {
+  if (/fade|avoid|bust|overval|risk/.test(badge)) return 'fade';
+  if (/steal|value|sleeper|target|buy|upside/.test(badge)) return 'good';
+  return 'neutral';
+}
 
 export function Rankings() {
   const { connected, state, rank, busy, consent, pendingCount, autoApproving, approve, approveAll, deny, stop } =
@@ -88,26 +97,43 @@ export function Rankings() {
 
       {state.synthesis.answer &&
         (() => {
-          // Hydrate the ranker's [[Pn]] handles into real cards; fall back to prose-only if none parse.
+          // Hydrate the ranker's {% player %} tags into enriched cards; fall back to prose if none parse.
           const picks = resolveRankedPlayers(state.synthesis.answer, state.players);
+          const prose = boardProse(state.synthesis.answer);
           return (
             <div className="verdict board">
               <h3>Ranked top 5 — {state.position}</h3>
-              {picks.length > 0 && (
-                <ol className="ranked-cards">
-                  {picks.map((pick) => (
-                    <li key={pick.run.player.id} className="ranked-card">
-                      <span className="rank-num">{pick.rank}</span>
-                      <PlayerCard className="compact" player={pick.run.player} stats={pick.run.stats} />
-                      {pick.note && <p className="rank-note">{pick.note}</p>}
-                    </li>
-                  ))}
-                </ol>
-              )}
-              <details className="board-prose" open={picks.length === 0}>
-                <summary>Full analysis</summary>
+              {picks.length > 0 ? (
+                <>
+                  <ol className="ranked-cards">
+                    {picks.map((pick) => (
+                      <li key={pick.run.player.id} className="ranked-card">
+                        <span className="rank-num">{pick.rank}</span>
+                        <div className="ranked-body">
+                          <div className="ranked-badges">
+                            {pick.tier && <span className="tier-badge">Tier {pick.tier}</span>}
+                            {pick.badge && <span className={`pick-badge ${badgeKind(pick.badge)}`}>{pick.badge}</span>}
+                          </div>
+                          <PlayerCard className="compact" player={pick.run.player} stats={pick.run.stats} />
+                          {pick.note && (
+                            <p className="rank-note">
+                              <MarkdownInline text={pick.note} />
+                            </p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                  {prose && (
+                    <p className="board-bottomline">
+                      <MarkdownInline text={prose} />
+                    </p>
+                  )}
+                </>
+              ) : (
+                // Nothing parsed — show the raw board so the run is never invisible.
                 <pre className="board-md">{state.synthesis.answer}</pre>
-              </details>
+              )}
             </div>
           );
         })()}
