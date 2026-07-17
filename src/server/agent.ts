@@ -1,4 +1,5 @@
 import { ToolRegistry, type Agent } from 'agent-harness';
+import { PLAYER_TAG } from '../rankingTags';
 import { fetchUrl } from '../tools/generic/fetchUrl';
 import { webSearch } from '../tools/generic/webSearch';
 
@@ -105,24 +106,21 @@ export function rankerAgent(): Agent {
       'Rank the TOP 5 by FORWARD-looking fantasy value — projected role and volume, ceiling and floor, and',
       'draft cost. Do NOT simply reproduce the last-season fantasy-points order; weigh situation and value',
       'and reorder wherever the outlook warrants it.',
-      'OUTPUT FORMAT — emit each of your top 5 picks as a Markdoc tag, in ranked order, one after',
-      'another. Use EXACTLY this shape and close every tag:',
-      '{% player id="P3" rank="1" tier="1" badge="steal" %}',
-      'One comparative sentence — why this player ranks above the next (floor vs ceiling, target share /',
-      'volume, ADP value, boom-or-bust) — then cite the source URL(s) from this player\'s note.',
-      '{% /player %}',
-      'Attribute rules: id = the player\'s exact id from the input (P1, P2, …); rank = 1..5; tier = 1..5',
-      '(group the tiers so the break points are meaningful). badge is OPTIONAL — a SHORT one-word label',
-      'in caps that adds fantasy signal (e.g. VALUE, STEAL, SLEEPER, FADE, ANCHOR); use FADE for an',
-      'overvalued pick, and omit badge when nothing stands out. You MAY add ONE extra tag AFTER the five',
-      'with badge="SLEEPER" for a lower-ranked league-winning upside pick (rank it 6). Do not invent ids',
-      'or leave a tag unclosed.',
-      'IMPORTANT: the id codes (P1, P2, …) are internal — in the NOTE text refer to other players by',
-      'NAME, never by their code.',
+      'OUTPUT: emit one player tag for each of your top 5 picks, in ranked order (see the UI TAGS',
+      'section for how to write a tag). Set id = the player\'s exact id from the input (P1, P2, …);',
+      'rank = 1..5; tier = 1..5, grouped so the tier breaks are meaningful. badge is OPTIONAL — a SHORT',
+      'one-word label in caps that adds fantasy signal (e.g. VALUE, STEAL, SLEEPER, FADE, ANCHOR); use',
+      'FADE for an overvalued pick and omit it when nothing stands out. You MAY add ONE extra player tag',
+      'after the five with badge="SLEEPER" (rank it 6) for a lower-ranked league-winning upside pick.',
+      'Put your COMPARATIVE take in each tag\'s body — why this player ranks above the next (floor vs',
+      'ceiling, target share / volume, ADP value, boom-or-bust) — and cite the source URL(s) from that',
+      'player\'s note. In the body, refer to other players by NAME, never by their internal id code.',
       'After all the tags, add a 1-2 sentence BOTTOM LINE (plain prose, no tag): who to target, who to',
       'avoid, and how to read the tiers. Be decisive and use real fantasy framing.',
     ].join(' '),
     tools: new ToolRegistry(),
+    // The harness teaches the model how to emit this tag and parses it back (see rankingBoard).
+    uiTags: [PLAYER_TAG],
     context: {
       window: Number(process.env.MODEL_CONTEXT_WINDOW ?? 8192),
       keepRecent: 12,
