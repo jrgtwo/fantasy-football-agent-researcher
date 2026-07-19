@@ -31,16 +31,12 @@ export function useRanking() {
   // Aborts the current ranking's scout group (Stop). Fresh per rank().
   const groupAbort = useRef<AbortController | null>(null);
 
-  // Auto-approve is an explicit opt-in (the "Approve all & auto-approve" action) — per-request consent
-  // stays the default. A SYNCHRONOUS ref for the event-callback read; a state mirror for display.
-  const autoApprove = useRef(false);
+  // Auto-approve is an explicit opt-in ("Approve all & auto-approve") that flips the harness consent
+  // policy to 'allow' (server-side); this state mirror just drives the UI. Per-request is the default.
   const [autoApproving, setAutoApproving] = useState(false);
 
-  // Fold one run's event into the reducer, auto-approving consent if the user opted in.
+  // Fold one run's event into the reducer. (Consent auto-approval now lives in the harness policy.)
   const handleRunEvent = useCallback((runId: string, event: AgentEvent) => {
-    if (event.type === 'consent.requested' && autoApprove.current) {
-      clientRef.current?.decideConsent(runId, event.callId, true);
-    }
     dispatch({ type: 'event', runId, event });
   }, []);
 
@@ -65,8 +61,8 @@ export function useRanking() {
       const client = clientRef.current;
       if (!client) return;
 
-      autoApprove.current = false;
       setAutoApproving(false);
+      client.setConsentPolicy('ask'); // fresh ranking → per-request consent again
       const ac = new AbortController();
       groupAbort.current = ac;
       dispatch({ type: 'seed', position, candidates });
@@ -119,26 +115,24 @@ export function useRanking() {
     if (c) clientRef.current?.decideConsent(c.runId, c.callId, false);
   }, []);
 
-  // Secondary: approve every currently-pending consent AND auto-approve subsequent ones. Stop() is the
-  // escape hatch that makes this safe.
+  // Secondary: flip the harness consent policy to auto-approve — the server resolves the current
+  // backlog + all future requests, no client round-trip. Stop() is the escape hatch that makes it safe.
   const approveAll = useCallback(() => {
-    autoApprove.current = true;
     setAutoApproving(true);
-    const client = clientRef.current;
-    if (client) for (const c of allPendingConsents(stateRef.current)) client.decideConsent(c.runId, c.callId, true);
+    clientRef.current?.setConsentPolicy('allow');
   }, []);
 
-  // Kill switch: abort the scout group (harness cancels its in-flight runs), cancel the ranker if it's
-  // running, deny any pending consents, and freeze the ranking. Turns off auto-approve.
+  // Kill switch: reset the policy to per-request, halt the scout pool, deny anything parked (so a
+  // consent-blocked run can end), cancel every run on the connection, and freeze the ranking.
   const stop = useCallback(() => {
     const client = clientRef.current;
     const s = stateRef.current;
-    autoApprove.current = false;
     setAutoApproving(false);
     groupAbort.current?.abort();
     if (client) {
+      client.setConsentPolicy('ask');
       for (const c of allPendingConsents(s)) client.decideConsent(c.runId, c.callId, false);
-      if (s.synthesisRunId && s.phase === 'synthesizing') client.cancel(s.synthesisRunId);
+      client.cancelAll();
     }
     dispatch({ type: 'stop' });
   }, []);

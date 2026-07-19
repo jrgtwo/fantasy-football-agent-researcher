@@ -48,7 +48,7 @@ export function Rankings() {
         <p className="muted small">Auto-approving web research — hit Stop to halt.</p>
       )}
 
-      {consent && (
+      {consent && !autoApproving && (
         <section className="consent">
           <p>
             Allow <code>{consent.name}</code> for <b>{consentWho}</b>?{' '}
