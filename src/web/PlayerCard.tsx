@@ -8,43 +8,49 @@ export function PlayerCard({
   player,
   stats,
   className = '',
+  footer,
   children,
 }: {
   player: Player;
   stats: PlayerStats;
   className?: string;
+  /** Content rendered INSIDE the card, below the identity/stats row (e.g. a ranking summary). */
+  footer?: ReactNode;
   children?: ReactNode;
 }) {
   return (
     <section className={`card ${className}`.trim()}>
-      {player.headshot && <img src={player.headshot} alt="" width={72} height={72} />}
-      <div className="card-body">
-        <h2>{player.name}</h2>
-        <p className="muted">
-          {player.position} · {player.team} · {stats.games} G
-        </p>
-        <ul className="statline">
-          <li>
-            <b>{stats.fantasyPointsPpr.toFixed(1)}</b> PPR
-          </li>
-          {stats.passingYards > 0 && (
+      <div className="card-main">
+        {player.headshot && <img src={player.headshot} alt="" width={72} height={72} />}
+        <div className="card-body">
+          <h2>{player.name}</h2>
+          <p className="muted">
+            {player.position} · {player.team} · {stats.games} G
+          </p>
+          <ul className="statline">
             <li>
-              {stats.passingYards} pass yds · {stats.passingTds} TD
+              <b>{stats.fantasyPointsPpr.toFixed(1)}</b> PPR
             </li>
-          )}
-          {stats.rushingYards > 0 && (
-            <li>
-              {stats.rushingYards} rush yds · {stats.rushingTds} TD
-            </li>
-          )}
-          {stats.receivingYards > 0 && (
-            <li>
-              {stats.receptions} rec · {stats.receivingYards} yds · {stats.receivingTds} TD
-            </li>
-          )}
-        </ul>
+            {stats.passingYards > 0 && (
+              <li>
+                {stats.passingYards} pass yds · {stats.passingTds} TD
+              </li>
+            )}
+            {stats.rushingYards > 0 && (
+              <li>
+                {stats.rushingYards} rush yds · {stats.rushingTds} TD
+              </li>
+            )}
+            {stats.receivingYards > 0 && (
+              <li>
+                {stats.receptions} rec · {stats.receivingYards} yds · {stats.receivingTds} TD
+              </li>
+            )}
+          </ul>
+        </div>
+        {children}
       </div>
-      {children}
+      {footer && <div className="card-footer">{footer}</div>}
     </section>
   );
 }

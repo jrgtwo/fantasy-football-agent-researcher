@@ -6,7 +6,7 @@ import type { PlayerRun } from './rankingTypes';
 // / stripUiTags) — FF only maps each tag's id to the seeded player record and shapes the pick. Props
 // come from three places: id → our data, attributes (rank/tier/badge) → the agent's fields, body → note.
 
-const MAX_PICKS = 6; // top 5 + a possible sleeper
+const MAX_PICKS = 5;
 const handleIndex = (id: string | undefined): number | null => {
   const m = id?.match(/P(\d+)/i);
   return m ? Number(m[1]) : null;

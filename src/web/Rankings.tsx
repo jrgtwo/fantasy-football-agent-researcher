@@ -114,12 +114,12 @@ export function Rankings() {
                             {pick.tier && <span className="tier-badge">Tier {pick.tier}</span>}
                             {pick.badge && <span className={`pick-badge ${badgeKind(pick.badge)}`}>{pick.badge}</span>}
                           </div>
-                          <PlayerCard className="compact" player={pick.run.player} stats={pick.run.stats} />
-                          {pick.note && (
-                            <p className="rank-note">
-                              <MarkdownInline text={pick.note} />
-                            </p>
-                          )}
+                          <PlayerCard
+                            className="compact"
+                            player={pick.run.player}
+                            stats={pick.run.stats}
+                            footer={pick.note ? <MarkdownInline text={pick.note} /> : undefined}
+                          />
                         </div>
                       </li>
                     ))}
