@@ -35,16 +35,38 @@ export function useRanking() {
   // policy to 'allow' (server-side); this state mirror just drives the UI. Per-request is the default.
   const [autoApproving, setAutoApproving] = useState(false);
 
+  // TEMP debug: the exact run.start messages the browser actually puts on the wire (captured by
+  // wrapping the WebSocket, so it's ground truth regardless of any client-version questions).
+  const [sentDebug, setSentDebug] = useState<string[]>([]);
+
   // Fold one run's event into the reducer. (Consent auto-approval now lives in the harness policy.)
   const handleRunEvent = useCallback((runId: string, event: AgentEvent) => {
     dispatch({ type: 'event', runId, event });
   }, []);
 
   useEffect(() => {
+    // TEMP debug: wrap WebSocket to record the exact bytes sent for run.start messages.
+    class LoggingWebSocket extends WebSocket {
+      send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void {
+        if (typeof data === 'string') {
+          try {
+            const m = JSON.parse(data) as { type?: string; agent?: string; cacheKey?: unknown };
+            if (m.type === 'run.start') {
+              const key = 'cacheKey' in m ? JSON.stringify(m.cacheKey) : 'FIELD ABSENT';
+              setSentDebug((prev) => [...prev, `sent ${m.agent}: cacheKey=${key}`].slice(-12));
+            }
+          } catch {
+            /* ignore non-JSON */
+          }
+        }
+        super.send(data);
+      }
+    }
     // Every run uses a per-run onEvent (via runGroup / startRun below), so the client needs no global
     // event handler — just surface connection errors.
     const client = new HarnessClient(WS_URL, TOKEN, {
       handlers: { onError: (err) => dispatch({ type: 'seedError', error: `${err.code}: ${err.message}` }) },
+      WebSocketImpl: LoggingWebSocket as unknown as typeof WebSocket,
     });
     clientRef.current = client;
     client.connect().then(() => setConnected(true)).catch(() => setConnected(false));
@@ -68,7 +90,14 @@ export function useRanking() {
       dispatch({ type: 'seed', position, candidates });
 
       // Fan out the scouts; the harness caps concurrency and tells us when each settles.
-      const items = candidates.map((c) => ({ input: scoutInput(c.player, c.stats), agent: 'scout' }));
+      // Memoize each scout by player+season so re-ranking a position reuses research (no re-run,
+      // no consent). The frozen snapshot is static within a session, so no ttl (cache for the
+      // sidecar's lifetime). The ranker run stays uncached — it depends on all writeups.
+      const items = candidates.map((c) => ({
+        input: scoutInput(c.player, c.stats),
+        agent: 'scout',
+        cacheKey: `scout:${c.player.id}:${c.stats.season}`,
+      }));
       const results = await runGroup(client, items, {
         concurrency: RANKING_CONCURRENCY,
         signal: ac.signal,
@@ -143,5 +172,6 @@ export function useRanking() {
     connected, state, rank, busy,
     consent: head, pendingCount: pending.length, autoApproving,
     approve, approveAll, deny, stop,
+    sentDebug,
   };
 }

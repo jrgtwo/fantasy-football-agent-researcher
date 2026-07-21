@@ -15,7 +15,7 @@ function badgeKind(badge: string): string {
 }
 
 export function Rankings() {
-  const { connected, state, rank, busy, consent, pendingCount, autoApproving, approve, approveAll, deny, stop } =
+  const { connected, state, rank, busy, consent, pendingCount, autoApproving, approve, approveAll, deny, stop, sentDebug } =
     useRanking();
   const [pos, setPos] = useState('QB');
   const doneCount = state.players.filter((p) => p.status !== 'queued' && p.status !== 'running').length;
@@ -43,6 +43,16 @@ export function Rankings() {
           </button>
         )}
       </div>
+
+      {sentDebug.length > 0 && (
+        <pre
+          className="muted small"
+          style={{ border: '1px dashed #888', padding: '0.4rem', whiteSpace: 'pre-wrap', marginTop: '0.5rem' }}
+        >
+          [DEBUG] exact run.start messages sent on the wire:{'\n'}
+          {sentDebug.join('\n')}
+        </pre>
+      )}
 
       {autoApproving && busy && (
         <p className="muted small">Auto-approving web research — hit Stop to halt.</p>
@@ -78,7 +88,8 @@ export function Rankings() {
                 <details>
                   <summary>
                     <span className={`chip ${pr.status}`} /> {pr.player.name}{' '}
-                    <span className="muted">· {pr.status}</span>
+                    <span className="muted">· {pr.status}</span>{' '}
+                    <code className="muted small">🔑 scout:{pr.player.id}:{pr.stats.season}</code>
                   </summary>
                   {pr.run.answer && <p className="writeup">{pr.run.answer}</p>}
                   {pr.run.trace.length > 0 && (
