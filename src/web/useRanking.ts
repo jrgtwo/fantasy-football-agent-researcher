@@ -98,7 +98,27 @@ export function useRanking() {
         agent: 'scout',
         cacheKey: `scout:${c.player.id}:${c.stats.season}`,
       }));
-      const results = await runGroup(client, items, {
+      // TEMP debug: trace the key through each layer between build and the wire.
+      // Read the SOURCE of the harness functions the browser actually loaded — if the loaded code
+      // doesn't even mention cacheKey, the browser is running a pre-cacheKey (stale) harness bundle.
+      setSentDebug((prev) => [
+        ...prev,
+        `0a. loaded runGroup has cacheKey wiring? ${/cacheKey/.test(runGroup.toString())}`,
+        `0b. loaded startRun has cacheKey wiring? ${/cacheKey/.test(client.startRun.toString())}`,
+        `1. built item.cacheKey = ${JSON.stringify(items[0]?.cacheKey)}`,
+      ].slice(-24));
+      // Wrap the client so we see exactly what runGroup hands to startRun.
+      const debugClient = {
+        startRun: (
+          input: string,
+          opts: { agent?: string; onEvent?: (e: AgentEvent) => void; cacheKey?: string; ttl?: number },
+        ) => {
+          setSentDebug((prev) => [...prev, `2. runGroup→startRun cacheKey = ${JSON.stringify(opts.cacheKey ?? null)}`].slice(-24));
+          return client.startRun(input, opts);
+        },
+        cancel: (id: string) => client.cancel(id),
+      };
+      const results = await runGroup(debugClient, items, {
         concurrency: RANKING_CONCURRENCY,
         signal: ac.signal,
         onEvent: (i, runId, event) => {
