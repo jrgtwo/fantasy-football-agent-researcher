@@ -1,5 +1,5 @@
 import { ToolRegistry, type Agent } from 'agent-harness';
-import { PLAYER_TAG } from '../rankingTags';
+import { RANKER_BOARD_SCHEMA } from '../rankingTags';
 import { fetchUrl } from '../tools/generic/fetchUrl';
 import { webSearch } from '../tools/generic/webSearch';
 
@@ -106,20 +106,19 @@ export function rankerAgent(): Agent {
       'Rank the TOP 5 by FORWARD-looking fantasy value — projected role and volume, ceiling and floor, and',
       'draft cost. Do NOT simply reproduce the last-season fantasy-points order; weigh situation and value',
       'and reorder wherever the outlook warrants it.',
-      'OUTPUT: emit one player tag for each of your top 5 picks, in ranked order (see the UI TAGS',
-      'section for how to write a tag). Set id = the player\'s exact id from the input (P1, P2, …);',
-      'rank = 1..5; tier = 1..5, grouped so the tier breaks are meaningful. badge is OPTIONAL — a SHORT',
-      'one-word label in caps that adds fantasy signal (e.g. VALUE, STEAL, SLEEPER, FADE, ANCHOR); use',
-      'FADE for an overvalued pick and omit it when nothing stands out.',
-      'Put your COMPARATIVE take in each tag\'s body — why this player ranks above the next (floor vs',
-      'ceiling, target share / volume, ADP value, boom-or-bust) — and cite the source URL(s) from that',
-      'player\'s note. In the body, refer to other players by NAME, never by their internal id code.',
-      'After all the tags, add a 1-2 sentence BOTTOM LINE (plain prose, no tag): who to target, who to',
-      'avoid, and how to read the tiers. Be decisive and use real fantasy framing.',
+      'OUTPUT: return your board as structured data with a `picks` array (your top 5, in ranked order) and',
+      'a `bottomLine`. For each pick set id = the player\'s exact id from the input (P1, P2, …); rank = 1..5;',
+      'tier = 1..5, grouped so the tier breaks are meaningful. badge is OPTIONAL — a SHORT one-word label in',
+      'caps that adds fantasy signal (e.g. VALUE, STEAL, SLEEPER, FADE, ANCHOR); use FADE for an overvalued',
+      'pick and omit it when nothing stands out. Put your COMPARATIVE take in each pick\'s `note` — why this',
+      'player ranks above the next (floor vs ceiling, target share / volume, ADP value, boom-or-bust) — and',
+      'cite the source URL(s) from that player\'s scouting note. In the note, refer to other players by NAME,',
+      'never by their internal id code. The `bottomLine` is a 1-2 sentence take: who to target, who to avoid,',
+      'and how to read the tiers. Be decisive and use real fantasy framing.',
     ].join(' '),
     tools: new ToolRegistry(),
-    // The harness teaches the model how to emit this tag and parses it back (see rankingBoard).
-    uiTags: [PLAYER_TAG],
+    // The harness grammar-enforces this shape on the answer and hands FF validated data (see rankingBoard).
+    outputSchema: RANKER_BOARD_SCHEMA,
     context: {
       window: Number(process.env.MODEL_CONTEXT_WINDOW ?? 8192),
       keepRecent: 12,

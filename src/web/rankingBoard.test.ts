@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import type { RankedBoard } from '../rankingTags';
 import type { Player, PlayerStats } from '../data/types';
 import type { PlayerRun } from './rankingTypes';
 import { initialRunState } from './runReducer';
-import { boardProse, resolveRankedPlayers } from './rankingBoard';
+import { boardBottomLine, resolveRankedBoard } from './rankingBoard';
 
 const mkRun = (id: string, name: string): PlayerRun => ({
   player: { id, name, position: 'QB', team: 'KC', headshot: '', status: '' } as Player,
@@ -14,55 +15,58 @@ const mkRun = (id: string, name: string): PlayerRun => ({
 // 3 seeded candidates → handles P1, P2, P3
 const players: PlayerRun[] = [mkRun('a', 'Josh Allen'), mkRun('b', 'Drake Maye'), mkRun('c', 'Matthew Stafford')];
 
-const tag = (id: string, rank: string, tier: string, note: string, badge?: string) =>
-  `{% player id="${id}" rank="${rank}" tier="${tier}"${badge ? ` badge="${badge}"` : ''} %}${note}{% /player %}`;
+const board = (picks: RankedBoard['picks'], bottomLine = ''): RankedBoard => ({ picks, bottomLine });
 
-describe('resolveRankedPlayers (Markdoc tags)', () => {
+describe('resolveRankedBoard (structured picks)', () => {
   it('maps id → seeded player and carries rank/tier/badge/note', () => {
-    const answer = [
-      'Here is the board:',
-      tag('P3', '1', '1', 'Proven ceiling; ranks above Allen.', 'steal'),
-      tag('P1', '2', '1', 'Dual-threat floor.'),
-    ].join('\n\n');
-    const out = resolveRankedPlayers(answer, players);
+    const out = resolveRankedBoard(
+      board([
+        { id: 'P3', rank: 1, tier: 1, badge: 'STEAL', note: 'Proven ceiling; ranks above Allen.' },
+        { id: 'P1', rank: 2, tier: 1, note: 'Dual-threat floor.' },
+      ]),
+      players,
+    );
     expect(out.map((p) => p.run.player.name)).toEqual(['Matthew Stafford', 'Josh Allen']);
     expect(out[0]).toMatchObject({ rank: 1, tier: '1', badge: 'steal', note: 'Proven ceiling; ranks above Allen.' });
     expect(out[1]!.badge).toBeUndefined();
   });
 
   it('ignores unresolved / out-of-range ids and dedupes', () => {
-    const answer = [
-      tag('P1', '1', '1', 'a'),
-      tag('P9', '2', '1', 'out of range'),
-      tag('P2', '3', '2', 'b'),
-      tag('P1', '4', '3', 'dup'),
-    ].join('\n');
-    expect(resolveRankedPlayers(answer, players).map((p) => p.run.player.id)).toEqual(['a', 'b']);
+    const out = resolveRankedBoard(
+      board([
+        { id: 'P1', rank: 1, tier: 1, note: 'a' },
+        { id: 'P9', rank: 2, tier: 1, note: 'out of range' },
+        { id: 'P2', rank: 3, tier: 2, note: 'b' },
+        { id: 'P1', rank: 4, tier: 3, note: 'dup' },
+      ]),
+      players,
+    );
+    expect(out.map((p) => p.run.player.id)).toEqual(['a', 'b']);
   });
 
-  it('falls back to document order when rank attr is missing/invalid', () => {
-    const answer = `{% player id="P2" %}first{% /player %}\n{% player id="P1" tier="2" %}second{% /player %}`;
-    const out = resolveRankedPlayers(answer, players);
+  it('falls back to document order when rank is missing/invalid', () => {
+    const out = resolveRankedBoard(
+      board([
+        { id: 'P2', rank: 0, tier: 1, note: 'first' },
+        { id: 'P1', rank: -1, tier: 2, note: 'second' },
+      ]),
+      players,
+    );
     expect(out.map((p) => [p.run.player.id, p.rank])).toEqual([
       ['b', 1],
       ['a', 2],
     ]);
   });
 
-  it('ignores an unclosed (streaming) tag — only complete tags hydrate', () => {
-    const answer = `${tag('P1', '1', '1', 'done')}\n{% player id="P2" rank="2" tier="1" %}still streaming…`;
-    const out = resolveRankedPlayers(answer, players);
-    expect(out.map((p) => p.run.player.id)).toEqual(['a']);
-  });
-
-  it('returns [] when no tags parse (graceful fallback to prose-only)', () => {
-    expect(resolveRankedPlayers('1. **Josh Allen** — no tags here.', players)).toEqual([]);
+  it('returns [] when there is no board (graceful fallback)', () => {
+    expect(resolveRankedBoard(null, players)).toEqual([]);
+    expect(resolveRankedBoard({ bottomLine: 'x' }, players)).toEqual([]);
   });
 });
 
-describe('boardProse', () => {
-  it('strips player tags, leaving the bottom-line prose', () => {
-    const answer = `${tag('P1', '1', '1', 'note')}\n\nBottom line: target Allen, fade Stafford.`;
-    expect(boardProse(answer)).toBe('Bottom line: target Allen, fade Stafford.');
+describe('boardBottomLine', () => {
+  it('returns the board bottom line, else empty', () => {
+    expect(boardBottomLine(board([], 'Target Allen, fade Stafford.'))).toBe('Target Allen, fade Stafford.');
+    expect(boardBottomLine(null)).toBe('');
   });
 });

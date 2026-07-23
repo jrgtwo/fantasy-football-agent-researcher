@@ -1,19 +1,42 @@
-import type { UiTagDef } from 'agent-harness/client';
+// The ranker's output contract, declared ONCE. The ranker agent attaches the JSON Schema
+// (`outputSchema`, so the harness grammar-enforces the shape) and the board renderer consumes the
+// matching TS type — FF only writes the card component. Replaces the old `{% player %}` tag path:
+// the model now returns validated data, not prose we parse.
 
-// The `player` UI tag, declared ONCE. The ranker agent attaches it (so the harness teaches the model
-// how to emit it) and the board renderer parses it (so the harness finds it) — FF only writes the
-// card component. `import type` keeps this browser-safe (no runtime harness pulled into the bundle).
-export const PLAYER_TAG: UiTagDef = {
-  name: 'player',
-  description: 'a player card for a ranked pick',
-  attributes: {
-    type: 'object',
-    properties: {
-      id: { type: 'string' },
-      rank: { type: 'string' },
-      tier: { type: 'string' },
-      badge: { type: 'string' },
+/** One ranked pick as the model emits it (ids are the P1..Pn handles from the input). */
+export interface RankedPickData {
+  id: string;
+  rank: number;
+  tier: number;
+  badge?: string;
+  note: string;
+}
+
+/** The ranker's whole board. */
+export interface RankedBoard {
+  picks: RankedPickData[];
+  bottomLine: string;
+}
+
+/** JSON Schema the harness enforces on the ranker's answer (see `rankerAgent`). */
+export const RANKER_BOARD_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  required: ['picks', 'bottomLine'],
+  properties: {
+    picks: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['id', 'rank', 'tier', 'note'],
+        properties: {
+          id: { type: 'string', description: "the player's exact id from the input (P1, P2, …)" },
+          rank: { type: 'integer', description: '1..5' },
+          tier: { type: 'integer', description: '1..5, grouped so tier breaks are meaningful' },
+          badge: { type: 'string', description: 'OPTIONAL short caps label: VALUE, STEAL, SLEEPER, FADE, ANCHOR' },
+          note: { type: 'string', description: 'comparative take vs the next player; refer to others by NAME' },
+        },
+      },
     },
-    required: ['id'],
+    bottomLine: { type: 'string', description: '1-2 sentence take: who to target, who to avoid, how to read tiers' },
   },
 };

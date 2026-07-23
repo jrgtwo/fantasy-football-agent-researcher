@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { MarkdownInline } from './markdownInline';
 import { PlayerCard } from './PlayerCard';
-import { boardProse, resolveRankedPlayers } from './rankingBoard';
+import { boardBottomLine, resolveRankedBoard } from './rankingBoard';
 import { useRanking } from './useRanking';
 
 const POSITIONS = ['QB', 'RB', 'WR', 'TE'];
@@ -15,7 +15,7 @@ function badgeKind(badge: string): string {
 }
 
 export function Rankings() {
-  const { connected, state, rank, busy, consent, pendingCount, autoApproving, approve, approveAll, deny, stop, sentDebug } =
+  const { connected, state, rank, busy, consent, pendingCount, autoApproving, approve, approveAll, deny, stop } =
     useRanking();
   const [pos, setPos] = useState('QB');
   const doneCount = state.players.filter((p) => p.status !== 'queued' && p.status !== 'running').length;
@@ -43,16 +43,6 @@ export function Rankings() {
           </button>
         )}
       </div>
-
-      {sentDebug.length > 0 && (
-        <pre
-          className="muted small"
-          style={{ border: '1px dashed #888', padding: '0.4rem', whiteSpace: 'pre-wrap', marginTop: '0.5rem' }}
-        >
-          [DEBUG] exact run.start messages sent on the wire:{'\n'}
-          {sentDebug.join('\n')}
-        </pre>
-      )}
 
       {autoApproving && busy && (
         <p className="muted small">Auto-approving web research — hit Stop to halt.</p>
@@ -88,8 +78,7 @@ export function Rankings() {
                 <details>
                   <summary>
                     <span className={`chip ${pr.status}`} /> {pr.player.name}{' '}
-                    <span className="muted">· {pr.status}</span>{' '}
-                    <code className="muted small">🔑 scout:{pr.player.id}:{pr.stats.season}</code>
+                    <span className="muted">· {pr.status}</span>
                   </summary>
                   {pr.run.answer && <p className="writeup">{pr.run.answer}</p>}
                   {pr.run.trace.length > 0 && (
@@ -106,11 +95,12 @@ export function Rankings() {
         </>
       )}
 
-      {state.synthesis.answer &&
+      {state.synthesis.status === 'done' &&
         (() => {
-          // Hydrate the ranker's {% player %} tags into enriched cards; fall back to prose if none parse.
-          const picks = resolveRankedPlayers(state.synthesis.answer, state.players);
-          const prose = boardProse(state.synthesis.answer);
+          // Hydrate the ranker's structured picks into enriched cards; fall back to the raw answer if
+          // the board didn't resolve (shouldn't happen — the shape is grammar-enforced).
+          const picks = resolveRankedBoard(state.synthesis.structured, state.players);
+          const prose = boardBottomLine(state.synthesis.structured);
           return (
             <div className="verdict board">
               <h3>Ranked top 5 — {state.position}</h3>

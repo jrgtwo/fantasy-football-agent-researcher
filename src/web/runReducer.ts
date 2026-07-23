@@ -17,6 +17,8 @@ export interface RunState {
   answer: string;
   thinking: string;
   result: unknown;
+  /** Parsed + schema-validated final answer, when the agent declared an outputSchema. */
+  structured: unknown;
   trace: TraceLine[];
   consent: ConsentPrompt | null;
   error: string | null;
@@ -27,6 +29,7 @@ export const initialRunState: RunState = {
   answer: '',
   thinking: '',
   result: null,
+  structured: null,
   trace: [],
   consent: null,
   error: null,
@@ -63,7 +66,7 @@ export function foldRunEvent(state: RunState, runId: string, e: AgentEvent): Run
     case 'context.compacted':
       return push('ctx', `summarized ${e.summarized} older messages`);
     case 'run.finished':
-      return { ...state, status: 'done', result: e.result };
+      return { ...state, status: 'done', result: e.result, structured: e.structured ?? null };
     case 'run.error':
       return { ...state, status: 'error', error: e.error };
     default:

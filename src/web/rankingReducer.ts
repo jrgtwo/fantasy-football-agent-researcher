@@ -28,15 +28,15 @@ export function scoutInput(player: Player, stats: PlayerStats): string {
 }
 
 export function composeRankerInput(position: string, players: PlayerRun[]): string {
-  // Give each candidate an id (P1..Pn). The ranker emits a {% player id="Pn" … %} tag per pick, which
-  // the app hydrates into an enriched card (rankingBoard). The id resolves by exact lookup.
+  // Give each candidate an id (P1..Pn). The ranker returns a structured board keyed by these ids
+  // (rankingBoard resolves each pick's id back to the seeded player). The id resolves by exact lookup.
   const blocks = players
     .map((pr, i) => {
       const writeup = pr.run.answer.trim() || '(no writeup produced)';
       return `### id=P${i + 1} · ${pr.player.name} (${pr.player.team}) · season ${pr.stats.season} PPR ${pr.stats.fantasyPointsPpr.toFixed(1)}\n${writeup}`;
     })
     .join('\n\n');
-  return `Rank the top 5 ${position} for the upcoming season based on these scouting notes. Use the id shown for each player (P1, P2, …) as the id in your player tags.\n\n${blocks}`;
+  return `Rank the top 5 ${position} for the upcoming season based on these scouting notes. Use the id shown for each player (P1, P2, …) as the id for each pick.\n\n${blocks}`;
 }
 
 export function allScoutsSettled(state: RankingState): boolean {
